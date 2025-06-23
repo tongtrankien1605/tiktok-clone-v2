@@ -1,5 +1,5 @@
 const CACHE_NAME = "tiktok-clone-v1";           // Tên cache, có thể thay đổi khi cần cập nhật, thay cả bên index.html
-const REPOSITORY_ROOT = "/tiktok-clone/";       // Thay đổi theo đường dẫn của dự án
+const REPOSITORY_ROOT = "/tiktok-clone-v2/";       // Thay đổi theo đường dẫn của dự án
 
 self.addEventListener("install", (event) => {
     event.waitUntil(

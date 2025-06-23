@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>TikTok Clone by Tống Trần Kiên</title>
+        <title>Tiktok Clone v2</title>
         <link rel="icon" type="image/x-icon" href="favicon.ico" />
         <style>
             body {
@@ -53,7 +53,7 @@
             }
             .info p {
                 margin: 0;
-                font-size: 14px;
+                font-size: 12px;
             }
             .controls {
                 position: absolute;
@@ -64,10 +64,6 @@
                 flex-direction: column;
                 gap: 15px;
                 opacity: 1;
-                transition: opacity 0.3s ease;
-            }
-            .controls.hidden {
-                opacity: 0;
             }
             .control-btn {
                 background: rgba(0, 0, 0, 0.7);
@@ -97,7 +93,7 @@
                 color: white;
                 text-align: center;
                 font-size: 18px;
-                padding: 20px;
+                padding: 123px;
             }
             .refresh-btn {
                 position: fixed;
@@ -148,27 +144,40 @@
         <button class="refresh-btn" onclick="clearCacheAndReload()">🔄 Reload Video 🔄</button>
 
         <script>
+            // Định nghĩa ánh xạ hostname với base path
+            const baseConfig = new Map([
+                ["github.io", "/tiktok-clone-v2/"], // GitHub Pages, áp dụng cho ALL acc github và ALL repository
+                ["netlify.app", "/"],
+                ["mythirdhost.com", "/custompath/"],
+            ]);
 
-            // Đặt các biến toàn cục
+            // Lấy hostname hiện tại
+            const hostname = window.location.hostname;
 
-            const REPOSITORY_ROOT = "/tiktok-clone-v2/";                       // Đường dẫn gốc của kho lưu trữ
-            const VIDEOS_JSON_URL = `${REPOSITORY_ROOT}videos.json`;        // Đường dẫn đến tệp videos.json
-            const CACHE_NAME = "tiktok-clone-v1";                           // Tên cache cho Service Worker
+            // Xác định REPOSITORY_ROOT dựa trên hostname
+            let REPOSITORY_ROOT = "/"; // Mặc định là / nếu không khớp với bất kỳ hostname nào
+            for (const [key, value] of baseConfig) {
+                if (hostname === key || hostname.endsWith(`.${key}`)) {
+                    REPOSITORY_ROOT = value;
+                    break;
+                }
+            }
 
-            // Biến để lưu trữ danh sách video và trạng thái
+            const VIDEOS_JSON_URL = `${REPOSITORY_ROOT}videos.json`;
+            const CACHE_NAME = "service-worker-v1";
+
             let videoUrls = [];
             let currentIndex = 0;
             let isReloading = false;
             let isFirstLoad = true;
             let observer = null;
+            let jsonVersion = "1.0.2"; // Giá trị mặc định
 
-            // Các hằng số cho cache
             const CACHE_KEY = "videoUrls";
             const CACHE_EXPIRY_KEY = "videoUrlsExpiry";
-            const CACHE_DURATION = 30 * 60 * 1000;
+            const CACHE_DURATION = 30 * 60 * 1000; // 30 phút
             const FIRST_VISIT_KEY = "firstVisit";
 
-            // Kiểm tra và reload lần đầu truy cập
             window.addEventListener("load", () => {
                 const isFirstVisit = localStorage.getItem(FIRST_VISIT_KEY);
                 if (!isFirstVisit) {
@@ -188,6 +197,20 @@
                 return expiry && Date.now() < parseInt(expiry);
             }
 
+            function convertToCdnUrl(githubUrl) {
+                let cdnUrl;
+                if (githubUrl.startsWith("https://cdn.jsdelivr.net/gh/")) {
+                    cdnUrl = githubUrl;
+                } else if (githubUrl.startsWith("https://github.com/") && githubUrl.includes("/blob/")) {
+                    cdnUrl = githubUrl.replace("https://github.com/", "https://cdn.jsdelivr.net/gh/").replace("/blob/", "@");
+                } else if (githubUrl.startsWith("https://raw.githubusercontent.com/")) {
+                    cdnUrl = githubUrl.replace("https://raw.githubusercontent.com/", "https://cdn.jsdelivr.net/gh/").replace("/main/", "@main/");
+                } else {
+                    cdnUrl = githubUrl; // Giữ nguyên link ngoài như cdn.anh.moe
+                }
+                return `${cdnUrl}?v=${jsonVersion}`; // Thêm query string
+            }
+
             async function loadVideos(isReload = false) {
                 if (isReloading) return;
                 isReloading = true;
@@ -204,6 +227,7 @@
                                 const newData = await response.json();
                                 if (newData.version === cachedData.version) {
                                     videoUrls = cachedData.videos;
+                                    jsonVersion = cachedData.version;
                                     shouldUseCache = true;
                                 }
                             }
@@ -220,12 +244,8 @@
                         const response = await fetch(`${VIDEOS_JSON_URL}?v=${Date.now()}`);
                         if (!response.ok) throw new Error("Lỗi tải videos.json");
                         const data = await response.json();
-                        videoUrls = data.videos
-                            .filter((v) => v.url && isValidVideoUrl(v.url))
-                            .map((v) => ({
-                                ...v,
-                                url: v.url // Sử dụng URL tuyệt đối trực tiếp
-                            }));
+                        jsonVersion = data.version;
+                        videoUrls = data.videos.filter((v) => v.url && isValidVideoUrl(v.url)).map((v) => ({ ...v, url: convertToCdnUrl(v.url) }));
                         localStorage.setItem(CACHE_KEY, JSON.stringify({ version: data.version, videos: videoUrls }));
                         localStorage.setItem(CACHE_EXPIRY_KEY, Date.now() + CACHE_DURATION);
                     } catch (e) {
@@ -254,18 +274,21 @@
                     const slide = document.createElement("div");
                     slide.className = "video-slide";
                     slide.innerHTML = `
-                <div class="video-wrapper">
-                    <video src="${video.url}" playsinline preload="${index === 1 ? "auto" : "none"}" autoplay></video>
-                    <div class="progress-bar"><div class="progress"></div></div>
-                    <div class="info"><p>${video.description || "Không có mô tả"}</p></div>
-                </div>
-                <div class="controls">
-                    <button class="control-btn" onclick="togglePlay(this)">⏯️</button>
-                    <button class="control-btn" onclick="toggleMute(this)">🔊</button>
-                    <button class="control-btn" onclick="scrollToPrev()">⬆️</button>
-                    <button class="control-btn" onclick="scrollToNext()">⬇️</button>
-                </div>
-            `;
+                        <div class="video-wrapper" data-index="${index}">
+                            <video src="${video.url}" playsinline preload="${index === 1 ? "auto" : "none"}" autoplay></video>
+                            <div class="progress-bar"><div class="progress"></div></div>
+                            <div class="info">
+                                <p class="title">${video.title || "........."}</p>
+                                <p class="day-create">Created at: ${video.dayCreate || "........."}</p>
+                            </div>
+                        </div>
+                        <div class="controls">
+                            <button class="control-btn" onclick="togglePlay(this)">⏯️</button>
+                            <button class="control-btn" onclick="toggleMute(this)">🔊</button>
+                            <button class="control-btn" onclick="scrollToPrev()">⬆️</button>
+                            <button class="control-btn" onclick="scrollToNext()">⬇️</button>
+                        </div>
+                    `;
                     container.appendChild(slide);
                 });
 
@@ -287,7 +310,7 @@
                     const registration = await navigator.serviceWorker.getRegistration(`${REPOSITORY_ROOT}sw.js`);
                     if (registration) {
                         await registration.unregister();
-                        await caches.delete(CACHE_NAME); // Xóa cache của Service Worker
+                        await caches.delete(CACHE_NAME);
                     }
                 }
                 localStorage.removeItem(CACHE_KEY);
@@ -304,28 +327,13 @@
 
             function setupVideos() {
                 if (observer) observer.disconnect();
-                const videos = document.querySelectorAll("video");
-                let hideControlsTimeout;
-
-                // Bật âm thanh sau khi người dùng tương tác
-                document.addEventListener(
-                    "click",
-                    () => {
-                        videos.forEach((video) => {
-                            if (video.muted) {
-                                video.muted = false;
-                                console.log("Đã bật âm thanh cho video:", video.src);
-                            }
-                        });
-                    },
-                    { once: true }
-                );
+                const slides = document.querySelectorAll(".video-slide");
 
                 observer = new IntersectionObserver(
                     (entries) => {
                         entries.forEach((entry) => {
-                            const video = entry.target;
-                            const index = Array.from(videos).indexOf(video);
+                            const slide = entry.target;
+                            const index = parseInt(slide.querySelector(".video-wrapper").dataset.index);
                             if (entry.isIntersecting && !isReloading) {
                                 if (index === 0) {
                                     currentIndex = (currentIndex - 1 + videoUrls.length) % videoUrls.length;
@@ -334,86 +342,83 @@
                                     currentIndex = (currentIndex + 1) % videoUrls.length;
                                     loadVideos(true);
                                 } else if (index === 1) {
-                                    if (!isFirstLoad) {
-                                        video.play().catch(() => console.warn("Lỗi phát video:", video.src));
+                                    const video = slide.querySelector("video");
+                                    if (video && !isFirstLoad) {
+                                        video.play().catch((e) => {
+                                            console.warn("Lỗi phát video từ cdn.anh.moe:", e);
+                                            const videoName = video.src.split("/").pop().replace(".mp4", "");
+                                            video.parentElement.innerHTML = `
+                                                <p class="error-message">Video ${videoName} gặp lỗi CORS từ cdn.anh.moe! <br><br> Xem các video khác nhé.</p>
+                                                <div class="progress-bar"><div class="progress"></div></div>
+                                                <div class="info">
+                                                    <p class="title">${videoUrls[currentIndex].title || "........."}</p>
+                                                    <p class="day-create">Created at: ${videoUrls[currentIndex].dayCreate || "........."}</p>
+                                                </div>
+                                            `;
+                                        });
                                     }
-                                    clearTimeout(hideControlsTimeout);
-                                    const controls = video.parentElement.querySelector(".controls");
-                                    if (controls) {
-                                        controls.classList.remove("hidden");
-                                        hideControlsTimeout = setTimeout(() => {
-                                            controls.classList.add("hidden");
-                                        }, 3000);
-                                    }
+                                    const controls = slide.querySelector(".controls");
+                                    if (controls) controls.classList.remove("hidden");
                                 }
                             } else {
-                                video.pause();
-                                video.currentTime = 0;
+                                const video = slide.querySelector("video");
+                                if (video) {
+                                    video.pause();
+                                    video.currentTime = 0;
+                                }
                             }
                         });
                     },
                     { threshold: 0.7, rootMargin: "50px" }
                 );
 
-                videos.forEach((video) => {
-                    observer.observe(video);
+                slides.forEach((slide) => {
+                    const video = slide.querySelector("video");
+                    observer.observe(slide);
 
-                    video.addEventListener("click", () => {
-                        if (isFirstLoad) isFirstLoad = false;
-                        video.paused ? video.play() : video.pause();
-                        const btn = video.parentElement.querySelector(".control-btn");
-                        if (btn) btn.textContent = video.paused ? "▶️" : "⏸";
-                    });
+                    if (video) {
+                        video.addEventListener("click", () => {
+                            if (isFirstLoad) isFirstLoad = false;
+                            video.paused ? video.play() : video.pause();
+                            const btn = slide.querySelector(".control-btn");
+                            if (btn) btn.textContent = video.paused ? "▶️" : "⏸";
+                        });
 
-                    video.addEventListener("timeupdate", () => {
-                        const progress = video.parentElement.querySelector(".progress");
-                        if (progress) {
-                            const percent = (video.currentTime / video.duration) * 100;
-                            progress.style.width = `${percent}%`;
+                        video.addEventListener("timeupdate", () => {
+                            const progress = slide.querySelector(".progress");
+                            if (progress) {
+                                const percent = (video.currentTime / video.duration) * 100;
+                                progress.style.width = `${percent}%`;
+                            }
+                        });
+
+                        const progressBar = slide.querySelector(".progress-bar");
+                        if (progressBar) {
+                            progressBar.addEventListener("click", (e) => {
+                                const rect = progressBar.getBoundingClientRect();
+                                const pos = (e.clientX - rect.left) / rect.width;
+                                video.currentTime = pos * video.duration;
+                            });
                         }
-                    });
 
-                    const progressBar = video.parentElement.querySelector(".progress-bar");
-                    if (progressBar) {
-                        progressBar.addEventListener("click", (e) => {
-                            const rect = progressBar.getBoundingClientRect();
-                            const pos = (e.clientX - rect.left) / rect.width;
-                            video.currentTime = pos * video.duration;
+                        video.addEventListener("ended", () => {
+                            video.currentTime = 0;
+                            video.play();
+                        });
+
+                        video.addEventListener("error", (e) => {
+                            console.warn("Lỗi video từ cdn.anh.moe:", e);
+                            const videoName = video.src.split("/").pop().replace(".mp4", "");
+                            video.parentElement.innerHTML = `
+                                <p class="error-message">Video ${videoName} gặp lỗi CORS từ cdn.anh.moe! <br><br> Xem các video khác nhé.</p>
+                                <div class="progress-bar"><div class="progress"></div></div>
+                                <div class="info">
+                                    <p class="title">${videoUrls[currentIndex].title || "........."}</p>
+                                    <p class="day-create">Created at: ${videoUrls[currentIndex].dayCreate || "........."}</p>
+                                </div>
+                            `;
                         });
                     }
-
-                    video.addEventListener("ended", () => {
-                        video.currentTime = 0;
-                        video.play();
-                    });
-
-                    video.addEventListener("error", () => {
-                        console.warn("Lỗi video:", video.src);
-                        video.poster = "placeholder.jpg";
-                    });
-
-                    const wrapper = video.parentElement;
-                    wrapper.addEventListener("mousemove", () => {
-                        clearTimeout(hideControlsTimeout);
-                        const controls = wrapper.querySelector(".controls");
-                        if (controls) {
-                            controls.classList.remove("hidden");
-                            hideControlsTimeout = setTimeout(() => {
-                                controls.classList.add("hidden");
-                            }, 3000);
-                        }
-                    });
-
-                    wrapper.addEventListener("touchstart", () => {
-                        clearTimeout(hideControlsTimeout);
-                        const controls = wrapper.querySelector(".controls");
-                        if (controls) {
-                            controls.classList.remove("hidden");
-                            hideControlsTimeout = setTimeout(() => {
-                                controls.classList.add("hidden");
-                            }, 3000);
-                        }
-                    });
                 });
 
                 document.addEventListener("keydown", (e) => {
@@ -424,16 +429,19 @@
 
             function togglePlay(btn) {
                 const video = btn.closest(".video-slide").querySelector("video");
-                if (isFirstLoad) isFirstLoad = false;
-                video.paused ? video.play() : video.pause();
-                btn.textContent = video.paused ? "▶️" : "⏸";
+                if (video) {
+                    if (isFirstLoad) isFirstLoad = false;
+                    video.paused ? video.play() : video.pause();
+                    btn.textContent = video.paused ? "▶️" : "⏸";
+                }
             }
 
             function toggleMute(btn) {
                 const video = btn.closest(".video-slide").querySelector("video");
-                video.muted = !video.muted;
-                btn.textContent = video.muted ? "🔇" : "🔊";
-                console.log("Muted:", video.muted);
+                if (video) {
+                    video.muted = !video.muted;
+                    btn.textContent = video.muted ? "🔇" : "🔊";
+                }
             }
 
             function scrollToNext() {

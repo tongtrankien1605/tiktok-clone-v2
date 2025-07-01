@@ -2,19 +2,29 @@ const CACHE_NAME = "service-worker-v1";
 
 // Định nghĩa ánh xạ hostname với base path
 const baseConfig = new Map([
-    ["github.io", "/tiktok-clone-v2/"], // GitHub Pages, áp dụng cho ALL acc github và ALL repository
     ["netlify.app", "/"],
-    ["mythirdhost.com", "/custompath/"],
+    ["vercel.app", "/"],
+    ["pages.dev", "/"],
+    ["onrender.com", "/"],
 ]);
 
 self.addEventListener("install", (event) => {
     // Lấy hostname từ registration scope
-    const hostname = new URL(self.registration.scope).hostname;
-    let REPOSITORY_ROOT = "/"; // Mặc định là / nếu không khớp với bất kỳ hostname nào
-    for (const [key, value] of baseConfig) {
-        if (hostname === key || hostname.endsWith(`.${key}`)) {
-            REPOSITORY_ROOT = value;
-            break;
+    const scopeUrl = new URL(self.registration.scope);
+    const hostname = scopeUrl.hostname;
+
+    // Xác định REPOSITORY_ROOT
+    let REPOSITORY_ROOT = "/"; // Mặc định là /
+    if (hostname === "github.io" || hostname.endsWith(".github.io") || hostname === "gitlab.io" || hostname.endsWith(".gitlab.io")) {
+        // Lấy base path từ scope pathname
+        const path = scopeUrl.pathname.split("/").filter(Boolean);
+        REPOSITORY_ROOT = path.length > 0 ? `/${path[0]}/` : "/";
+    } else {
+        for (const [key, value] of baseConfig) {
+            if (hostname === key || hostname.endsWith(`.${key}`)) {
+                REPOSITORY_ROOT = value;
+                break;
+            }
         }
     }
 
@@ -48,11 +58,18 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
     const requestUrl = new URL(event.request.url);
     const hostname = requestUrl.hostname;
+
+    // Xác định REPOSITORY_ROOT
     let REPOSITORY_ROOT = "/"; // Mặc định
-    for (const [key, value] of baseConfig) {
-        if (hostname === key || hostname.endsWith(`.${key}`)) {
-            REPOSITORY_ROOT = value;
-            break;
+    if (hostname === "github.io" || hostname.endsWith(".github.io") || hostname === "gitlab.io" || hostname.endsWith(".gitlab.io")) {
+        const path = new URL(self.registration.scope).pathname.split("/").filter(Boolean);
+        REPOSITORY_ROOT = path.length > 0 ? `/${path[0]}/` : "/";
+    } else {
+        for (const [key, value] of baseConfig) {
+            if (hostname === key || hostname.endsWith(`.${key}`)) {
+                REPOSITORY_ROOT = value;
+                break;
+            }
         }
     }
 

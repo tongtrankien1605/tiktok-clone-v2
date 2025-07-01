@@ -6,6 +6,7 @@
         <title>Tiktok Clone v2</title>
         <link rel="icon" type="image/x-icon" href="favicon.ico" />
         <style>
+            /* Giữ nguyên CSS */
             body {
                 margin: 0;
                 overflow: hidden;
@@ -146,20 +147,27 @@
         <script>
             // Định nghĩa ánh xạ hostname với base path
             const baseConfig = new Map([
-                ["github.io", "/tiktok-clone-v2/"], // GitHub Pages, áp dụng cho ALL acc github và ALL repository
                 ["netlify.app", "/"],
-                ["mythirdhost.com", "/custompath/"],
+                ["vercel.app", "/"],
+                ["pages.dev", "/"],
+                ["onrender.com", "/"],
             ]);
 
             // Lấy hostname hiện tại
             const hostname = window.location.hostname;
 
             // Xác định REPOSITORY_ROOT dựa trên hostname
-            let REPOSITORY_ROOT = "/"; // Mặc định là / nếu không khớp với bất kỳ hostname nào
-            for (const [key, value] of baseConfig) {
-                if (hostname === key || hostname.endsWith(`.${key}`)) {
-                    REPOSITORY_ROOT = value;
-                    break;
+            let REPOSITORY_ROOT = "/"; // Mặc định là /
+            if (hostname === "github.io" || hostname.endsWith(".github.io") || hostname === "gitlab.io" || hostname.endsWith(".gitlab.io")) {
+                // Lấy base path từ pathname (bỏ query string và fragment)
+                const path = window.location.pathname.split("/").filter(Boolean);
+                REPOSITORY_ROOT = path.length > 0 ? `/${path[0]}/` : "/";
+            } else {
+                for (const [key, value] of baseConfig) {
+                    if (hostname === key || hostname.endsWith(`.${key}`)) {
+                        REPOSITORY_ROOT = value;
+                        break;
+                    }
                 }
             }
 

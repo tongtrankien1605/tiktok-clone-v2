@@ -353,10 +353,10 @@
                                     const video = slide.querySelector("video");
                                     if (video && !isFirstLoad) {
                                         video.play().catch((e) => {
-                                            console.warn("Lỗi phát video từ cdn.anh.moe:", e);
+                                            console.warn("Lỗi phát video:", e);
                                             const videoName = video.src.split("/").pop().replace(".mp4", "");
                                             video.parentElement.innerHTML = `
-                                                <p class="error-message">Video ${videoName} gặp lỗi CORS từ cdn.anh.moe! <br><br> Xem các video khác nhé.</p>
+                                                <p class="error-message">Video ${videoName} gặp lỗi! <br><br> Xem các video khác nhé.</p>
                                                 <div class="progress-bar"><div class="progress"></div></div>
                                                 <div class="info">
                                                     <p class="title">${videoUrls[currentIndex].title || "........."}</p>
@@ -415,10 +415,10 @@
                         });
 
                         video.addEventListener("error", (e) => {
-                            console.warn("Lỗi video từ cdn.anh.moe:", e);
+                            console.warn("Lỗi video:", e);
                             const videoName = video.src.split("/").pop().replace(".mp4", "");
                             video.parentElement.innerHTML = `
-                                <p class="error-message">Video ${videoName} gặp lỗi CORS từ cdn.anh.moe! <br><br> Xem các video khác nhé.</p>
+                                <p class="error-message">Video ${videoName} gặp lỗi! <br><br> Xem các video khác nhé.</p>
                                 <div class="progress-bar"><div class="progress"></div></div>
                                 <div class="info">
                                     <p class="title">${videoUrls[currentIndex].title || "........."}</p>

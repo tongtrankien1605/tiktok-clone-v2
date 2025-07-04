@@ -1,6 +1,11 @@
 ## 🚀 **tiktok-clone-v2 : Lướt video tương tự tiktok, sử dụng Base_URL để chủ động khi thay đổi tài khoản hoặc tên repository mà không cần sửa logic** 🚀
 
-**Trang được code dựa theo cấu trúc nhỏ giống Tiktok, dùng để xem các video đã được upload lên server**
+**- Trang được code dựa theo cấu trúc nhỏ giống Tiktok, dùng để xem các video đã được upload lên server**
+
+</br>
+
+**- Phiên bản v2: khác bản gốc ở chỗ là có hỗ trợ 3 nguồn link video: CDN jsDelivr, CDN catbox.moe, CDN anh.moe**
+
 
 </br>
 

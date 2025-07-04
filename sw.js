@@ -2,10 +2,10 @@ const CACHE_NAME = "service-worker-v1";
 
 // Định nghĩa ánh xạ hostname với base path
 const baseConfig = new Map([
-    ["netlify.app", "/"],
-    ["vercel.app", "/"],
-    ["pages.dev", "/"],
-    ["onrender.com", "/"],
+    ["netlify.app", "/"],     // Netlify
+    ["vercel.app", "/"],      // Vercel
+    ["pages.dev", "/"],       // Cloudflare Pages
+    ["onrender.com", "/"],    // Render
 ]);
 
 self.addEventListener("install", (event) => {
@@ -73,15 +73,28 @@ self.addEventListener("fetch", (event) => {
         }
     }
 
-    // Bỏ qua caching cho video
+    // XỬ LÝ CÁC YỀU CẦU VIDEO ĐỂ DÙNG CACHE HTTP
     if (requestUrl.pathname.match(/\.(mp4|webm|ogg)$/i)) {
         event.respondWith(
-            fetch(event.request, {
-                cache: "no-store", // Không sử dụng cache trình duyệt cho video
-            }).catch(() => caches.match(`${REPOSITORY_ROOT}offline.html`))
+            fetch(event.request)
+                .then((response) => {
+                    // Để trình duyệt tự xử lý cache HTTP theo tiêu đề từ CDN
+                    return response;
+                })
+                .catch(() => caches.match(`${REPOSITORY_ROOT}offline.html`))
         );
         return;
     }
+
+    // // XỬ LÝ CÁC YÊU CẦU ĐỂ BỎ QUA CACHE HTTP CHO VIDEO
+    // if (requestUrl.pathname.match(/\.(mp4|webm|ogg)$/i)) {
+    //     event.respondWith(
+    //         fetch(event.request, {
+    //             cache: "no-store", // Không sử dụng cache trình duyệt cho video
+    //         }).catch(() => caches.match(`${REPOSITORY_ROOT}offline.html`))
+    //     );
+    //     return;
+    // }
 
     // Xử lý đặc biệt cho videos.json
     if (requestUrl.pathname.endsWith("videos.json")) {

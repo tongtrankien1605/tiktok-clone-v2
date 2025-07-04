@@ -3,7 +3,7 @@
 
     "version": "1.0.3",
 
-    "dayUpdate": "2025-06-23 14:54",
+    "dayUpdate": "2025-07-04 16:59",
 
     "videos": [
         { "url": "https://github.com/tongtrankien1605/daohuyenmy/blob/main/videos/dao-huyen-my-01.mp4", "title": "Đào Huyền My 01", "dayCreate": "2025-06-22" },
@@ -56,7 +56,10 @@
         { "url": "https://cdn.anh.moe/s9/2Wa1t96.mp4", "title": "Đào Huyền My 47", "dayCreate": "2025-06-22" },
         { "url": "https://cdn.anh.moe/s9/2cqpKd9R.mp4", "title": "Đào Huyền My 48", "dayCreate": "2025-06-22" },
         { "url": "https://cdn.anh.moe/s9/jMTVU8J.mp4", "title": "Đào Huyền My 49", "dayCreate": "2025-06-22" },
-        { "url": "https://cdn.anh.moe/s9/lSNqqZa0.mp4", "title": "Đào Huyền My 50", "dayCreate": "2025-06-22" }
+        { "url": "https://cdn.anh.moe/s9/lSNqqZa0.mp4", "title": "Đào Huyền My 50", "dayCreate": "2025-06-22" },
+
+        { "url": "https://files.catbox.moe/l9bqym.mp4", "title": "Trần Ngọc Ánh", "dayCreate": "2025-07-04" },
+        { "url": "https://files.catbox.moe/cbrogd.mp4", "title": "Phạm Hồng Thắm", "dayCreate": "2025-07-04" }
         
     ]
 }
